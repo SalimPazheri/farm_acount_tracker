@@ -8,6 +8,10 @@ export default function TransactionModal({ transaction, projectId, onClose, onSa
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showAddCat, setShowAddCat] = useState(false)
+  const [newCatName, setNewCatName] = useState('')
+  const [addingCat, setAddingCat] = useState(false)
+  const [catError, setCatError] = useState('')
 
   const [form, setForm] = useState({
     type: transaction?.type || 'expense',
@@ -21,13 +25,40 @@ export default function TransactionModal({ transaction, projectId, onClose, onSa
   })
 
   useEffect(() => {
+    loadData()
+  }, [])
+
+  async function loadData() {
     supabase.from('projects').select('id, name').order('name').then(({ data }) => setProjects(data || []))
     supabase.from('categories').select('*').order('sort_order').then(({ data }) => setCategories(data || []))
-  }, [])
+  }
+
+  async function loadCategories() {
+    const { data } = await supabase.from('categories').select('*').order('sort_order')
+    setCategories(data || [])
+  }
 
   const filteredCats = categories.filter(c => c.type === form.type || c.type === 'both')
 
   function set(field, value) { setForm(f => ({ ...f, [field]: value })) }
+
+  async function handleAddCategory() {
+    if (!newCatName.trim()) { setCatError('Enter a category name'); return }
+    setAddingCat(true); setCatError('')
+    const maxSort = categories.length > 0 ? Math.max(...categories.map(c => c.sort_order || 0)) : 0
+    const { data, error } = await supabase.from('categories').insert({
+      name: newCatName.trim(),
+      type: form.type,
+      sort_order: maxSort + 1,
+    }).select().single()
+
+    if (error) { setCatError(error.message); setAddingCat(false); return }
+    await loadCategories()
+    setForm(f => ({ ...f, category_id: data.id }))
+    setNewCatName('')
+    setShowAddCat(false)
+    setAddingCat(false)
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -69,12 +100,12 @@ export default function TransactionModal({ transaction, projectId, onClose, onSa
             <div className="type-toggle">
               <button type="button"
                 className={`type-option ${form.type === 'expense' ? 'active-expense' : ''}`}
-                onClick={() => set('type', 'expense')}>
+                onClick={() => { set('type', 'expense'); set('category_id', ''); setShowAddCat(false) }}>
                 <i className="ti ti-arrow-up-circle"></i> Expense
               </button>
               <button type="button"
                 className={`type-option ${form.type === 'income' ? 'active-income' : ''}`}
-                onClick={() => set('type', 'income')}>
+                onClick={() => { set('type', 'income'); set('category_id', ''); setShowAddCat(false) }}>
                 <i className="ti ti-arrow-down-circle"></i> Income
               </button>
             </div>
@@ -106,11 +137,73 @@ export default function TransactionModal({ transaction, projectId, onClose, onSa
             <div className="grid-2">
               <div className="form-group">
                 <label className="form-label">Category</label>
-                <select className="form-control" value={form.category_id} onChange={e => set('category_id', e.target.value)}>
-                  <option value="">Select category...</option>
-                  {filteredCats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
+                <div style={{display:'flex',gap:'6px',alignItems:'center'}}>
+                  <select
+                    className="form-control"
+                    value={form.category_id}
+                    onChange={e => set('category_id', e.target.value)}
+                    style={{flex:1}}
+                  >
+                    <option value="">Select category...</option>
+                    {filteredCats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                  <button
+                    type="button"
+                    title="Add new category"
+                    onClick={() => { setShowAddCat(v => !v); setCatError(''); setNewCatName('') }}
+                    style={{
+                      width:'34px', height:'34px', flexShrink:0,
+                      border:'1px solid var(--gray-300)', borderRadius:'8px',
+                      background: showAddCat ? 'var(--green-light)' : 'var(--white)',
+                      color: showAddCat ? 'var(--green)' : 'var(--gray-500)',
+                      display:'flex', alignItems:'center', justifyContent:'center',
+                      cursor:'pointer', fontSize:'18px', fontWeight:'400',
+                      transition:'all 0.15s'
+                    }}
+                  >
+                    <i className={`ti ${showAddCat ? 'ti-x' : 'ti-plus'}`} style={{fontSize:'16px'}}></i>
+                  </button>
+                </div>
+
+                {/* Inline add category */}
+                {showAddCat && (
+                  <div style={{
+                    marginTop:'8px', padding:'12px', background:'var(--gray-50)',
+                    border:'1px solid var(--gray-200)', borderRadius:'8px'
+                  }}>
+                    <div style={{fontSize:'12px',fontWeight:'500',color:'var(--gray-700)',marginBottom:'8px'}}>
+                      Add new {form.type} category
+                    </div>
+                    {catError && <div style={{fontSize:'12px',color:'var(--red)',marginBottom:'6px'}}>{catError}</div>}
+                    <div style={{display:'flex',gap:'6px'}}>
+                      <input
+                        className="form-control"
+                        type="text"
+                        placeholder="e.g. Water charges"
+                        value={newCatName}
+                        onChange={e => setNewCatName(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddCategory())}
+                        autoFocus
+                        style={{flex:1,fontSize:'13px',padding:'6px 10px'}}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddCategory}
+                        disabled={addingCat}
+                        style={{
+                          padding:'6px 14px', borderRadius:'7px', border:'none',
+                          background:'var(--green-mid)', color:'#fff',
+                          fontSize:'13px', fontWeight:'500', cursor:'pointer',
+                          whiteSpace:'nowrap'
+                        }}
+                      >
+                        {addingCat ? '...' : 'Add'}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
+
               <div className="form-group">
                 <label className="form-label">Payment Method</label>
                 <select className="form-control" value={form.payment_method} onChange={e => set('payment_method', e.target.value)}>

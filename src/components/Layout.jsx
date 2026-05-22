@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 
@@ -12,14 +13,28 @@ export default function Layout() {
   const { profile, signOut } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const initials = profile?.full_name
     ? profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2)
     : '?'
 
+  function handleNav(path) {
+    navigate(path)
+    setSidebarOpen(false)
+  }
+
   return (
     <div className="layout">
-      <aside className="sidebar">
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:99}}
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
         <div className="sidebar-logo">
           <div className="logo-mark">
             <div className="icon-wrap"><i className="ti ti-plant"></i></div>
@@ -36,7 +51,7 @@ export default function Layout() {
             <button
               key={item.path}
               className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}
-              onClick={() => navigate(item.path)}
+              onClick={() => handleNav(item.path)}
             >
               <i className={`ti ${item.icon}`}></i>
               {item.label}
@@ -57,6 +72,20 @@ export default function Layout() {
       </aside>
 
       <main className="main">
+        {/* Mobile topbar */}
+        <div className="mobile-topbar">
+          <button className="hamburger" onClick={() => setSidebarOpen(true)}>
+            <i className="ti ti-menu-2"></i>
+          </button>
+          <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+            <div style={{width:'24px',height:'24px',background:'var(--green-mid)',borderRadius:'6px',display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <i className="ti ti-plant" style={{color:'#fff',fontSize:'13px'}}></i>
+            </div>
+            <span style={{fontWeight:'600',fontSize:'15px'}}>Farm Ledger</span>
+          </div>
+          <div className="user-avatar" style={{width:'28px',height:'28px',fontSize:'11px'}}>{initials}</div>
+        </div>
+
         <Outlet />
       </main>
     </div>
