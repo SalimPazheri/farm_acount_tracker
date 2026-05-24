@@ -42,6 +42,13 @@ export default function TransactionModal({ transaction, projectId, onClose, onSa
 
   function set(field, value) { setForm(f => ({ ...f, [field]: value })) }
 
+  function handleAmountChange(e) {
+    const val = e.target.value
+    if (/^\d*\.?\d*$/.test(val)) {
+      set('amount', val)
+    }
+  }
+
   async function handleAddCategory() {
     if (!newCatName.trim()) { setCatError('Enter a category name'); return }
     setAddingCat(true); setCatError('')
@@ -125,7 +132,15 @@ export default function TransactionModal({ transaction, projectId, onClose, onSa
               </div>
               <div className="form-group">
                 <label className="form-label">Amount (₹) *</label>
-                <input className="form-control" type="number" step="0.01" min="0.01" placeholder="0.00" value={form.amount} onChange={e => set('amount', e.target.value)} required />
+                <input
+                  className="form-control"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  value={form.amount}
+                  onChange={handleAmountChange}
+                  required
+                />
               </div>
             </div>
 
