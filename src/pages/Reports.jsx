@@ -509,8 +509,9 @@ export default function Reports() {
           </div>
           <div className="form-group" style={{flex:'1',minWidth:'140px',margin:0}}>
             <label className="form-label">To Date</label>
-            <input className="form-control" type="date" value={stmtTo}max={new Date().toISOString().split('T')[0]}
-  onChange={e => { setStmtFrom(e.target.value); setStmtGenerated(false) }} />
+            <input className="form-control" type="date" value={stmtTo}
+  max={new Date().toISOString().split('T')[0]}
+  onChange={e => { setStmtTo(e.target.value); setStmtGenerated(false) }} />
           </div>
           <button className="btn btn-primary" onClick={handleGenerateStatement}
             disabled={stmtLoading} style={{height:'38px',whiteSpace:'nowrap'}}>
