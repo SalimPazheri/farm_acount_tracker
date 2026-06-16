@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard'
 import Projects from './pages/Projects'
 import Transactions from './pages/Transactions'
 import Reports from './pages/Reports'
+import Advances from './pages/Advances'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -24,6 +25,7 @@ function AppRoutes() {
         <Route path="projects" element={<Projects />} />
         <Route path="transactions" element={<Transactions />} />
         <Route path="reports" element={<Reports />} />
+        <Route path="advances" element={<Advances />} />
       </Route>
     </Routes>
   )

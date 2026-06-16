@@ -7,6 +7,7 @@ const navItems = [
   { path: '/projects', label: 'Projects', icon: 'ti-plant' },
   { path: '/transactions', label: 'Transactions', icon: 'ti-arrows-exchange' },
   { path: '/reports', label: 'Reports', icon: 'ti-chart-bar' },
+  { path: '/advances', label: 'Advances', icon: 'ti-cash' },
 ]
 
 export default function Layout() {
